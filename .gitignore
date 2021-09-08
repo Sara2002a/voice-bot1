@@ -9,6 +9,7 @@ __pycache__/
 
 # files
 .env
+*.log*
 
 # folders
 data
