@@ -1,0 +1,15 @@
+# byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ide
+**.vscode**
+**.idea**
+
+# files
+.env
+
+# folders
+data
+media
