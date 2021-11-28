@@ -20,6 +20,7 @@ help:
 	@echo "  t, top		Show detailed information about all containers"
 	@echo "  sl, show_logs		Show logs"
 	@echo "  sdl, show_dlogs	Show docker logs"
+	@echo "  style			Run black and isort for python code"
 	@echo "  h, help		Show help page"
 
 	@echo ""
@@ -78,3 +79,7 @@ show_logs:
 sdl: show_dlogs
 show_dlogs:
 	$(compose) logs -f
+
+style:
+	black src
+	isort src

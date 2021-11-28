@@ -5,6 +5,8 @@
 * Python 3.9
 * Poetry
 * Make
+* Black
+* Isort
 
 ### Usage
 
