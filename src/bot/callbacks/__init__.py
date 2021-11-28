@@ -1,1 +1,1 @@
-from bot.callbacks.admin import show_text, show_properties
+from bot.callbacks.admin import show_properties, show_text

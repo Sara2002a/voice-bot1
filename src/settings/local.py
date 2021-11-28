@@ -1,4 +1,4 @@
-from settings.base import root_dir, Field, BaseConfig
+from settings.base import BaseConfig, Field, root_dir
 
 
 class Config(BaseConfig):

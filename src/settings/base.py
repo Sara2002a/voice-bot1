@@ -1,7 +1,7 @@
-from loguru import logger
 from pathlib import Path
 
-from pydantic import validator, Field, BaseSettings
+from loguru import logger
+from pydantic import BaseSettings, Field, validator
 
 root_dir = Path(__file__).resolve().parent.parent
 # if bot in docker change root dir path
