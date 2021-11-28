@@ -18,8 +18,9 @@ help:
 	@echo "  ps			Show information about running containers"
 	@echo "  psa			Show information about all containers"
 	@echo "  t, top		Show detailed information about all containers"
-	@echo "  sl, show_logs		Show logs"
-	@echo "  sdl, show_dlogs	Show docker logs"
+	@echo "  sil, show_info_logs	Show logs INFO"
+	@echo "  sel, show_error_logs	Show logs ERROR"
+	@echo "  sdl, show_docker_logs	Show docker logs"
 	@echo "  style			Run black and isort for python code"
 	@echo "  h, help		Show help page"
 
@@ -72,12 +73,16 @@ t: top
 top:
 	$(compose) top
 
-sl: show_logs
-show_logs:
-	cat logs/bot.log
+sil: show_info_logs
+show_info_logs:
+	cat logs/bot_info.log
 
-sdl: show_dlogs
-show_dlogs:
+sel: show_error_logs
+show_error_logs:
+	cat logs/bot_error.log
+
+sdl: show_docker_logs
+show_docker_logs:
 	$(compose) logs -f
 
 style:

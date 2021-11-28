@@ -26,8 +26,15 @@ def configure_logger():
 
     logging.basicConfig(handlers=[InterceptHandler()], level="NOTSET")
     logger.add(
-        sink=root_dir.joinpath("logs/bot.log"),
+        sink=root_dir.joinpath("logs/bot_info.log"),
         level="INFO",
+        format="uptime:{elapsed} | time:{time} | {level} | {name}:{line} | {message}",
+        rotation="1 month",
+        compression="gz",
+    )
+    logger.add(
+        sink=root_dir.joinpath("logs/bot_error.log"),
+        level="ERROR",
         format="uptime:{elapsed} | time:{time} | {level} | {name}:{line} | {message}",
         rotation="1 month",
         compression="gz",
