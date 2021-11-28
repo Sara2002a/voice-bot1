@@ -3,7 +3,7 @@ from telegram import error as e
 
 
 def check_user(f):
-    def wrapper(*args):
+    def wrapper(*args) -> None:
         try:
             # args[0] is update
             if args[0].effective_user.is_bot:
@@ -13,7 +13,6 @@ def check_user(f):
                     )
                 )
                 args[0].message.reply_text("Bots are not allowed!")
-                return
             else:
                 f(*args)
 
