@@ -10,13 +10,13 @@ def configure_logger():
 
     class InterceptHandler(logging.Handler):
         def emit(self, record):
-            # Get corresponding Loguru level if it exists
+            # get corresponding Loguru level if it exists
             try:
                 level = logger.level(record.levelname).name
             except ValueError:
                 level = record.levelno
 
-            # Find caller from where originated the logged message
+            # find caller from where originated the logged message
             frame, depth = logging.currentframe(), 2
             while frame.f_code.co_filename == logging.__file__:
                 frame = frame.f_back
@@ -26,18 +26,11 @@ def configure_logger():
 
     logging.basicConfig(handlers=[InterceptHandler()], level="NOTSET")
     logger.add(
-        sink=root_dir.joinpath("logs/bot_info.log"),
+        sink=root_dir.joinpath("logs/bot.log"),
         level="INFO",
         format="uptime:{elapsed} | time:{time} | {level} | {name}:{line} | {message}",
         rotation="1 month",
         compression="gz",
     )
-    logger.add(
-        sink=root_dir.joinpath("logs/bot_error.log"),
-        level="ERROR",
-        format="uptime:{elapsed} | time:{time} | {level} | {name}:{line} | {message}",
-        rotation="1 month",
-        compression="gz",
-    )
-    # Show project settings before launch
+    # show project settings before launch
     logger.info("Project settings:\n{}".format(settings.json(indent=4)))
