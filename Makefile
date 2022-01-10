@@ -1,4 +1,4 @@
-compose_file := docker/docker-compose.yml
+compose_file := dockerfiles/docker-compose.yml
 compose := docker-compose -f $(compose_file)
 
 h: help
@@ -18,10 +18,15 @@ help:
 	@echo "  ps			Show information about running containers"
 	@echo "  psa			Show information about all containers"
 	@echo "  t, top		Show detailed information about all containers"
-	@echo "  sil, show_info_logs	Show logs INFO"
-	@echo "  sel, show_error_logs	Show logs ERROR"
+	@echo "  sh, term		Connect to container with bot"
+	@echo "  sl, show_logs		Show logs"
 	@echo "  sdl, show_docker_logs	Show docker logs"
 	@echo "  style			Run black and isort for python code"
+	@echo "  gc, generate_configs	Generate configuration files"
+	@echo "  gs, generate_secrets	Generate passwords"
+	@echo "  migrate		Apply migrations"
+	@echo "  makemigrations	Create migrations"
+	@echo "  add_voices_in_db	Add voice messages to the database"
 	@echo "  h, help		Show help page"
 
 	@echo ""
@@ -48,7 +53,7 @@ install:
 
 bu: build_and_up
 build_and_up:
-	$(compose) up -d --build
+	$(compose) up -d --build $(service)
 
 rm: remove
 remove:
@@ -73,13 +78,13 @@ t: top
 top:
 	$(compose) top
 
-sil: show_info_logs
-show_info_logs:
-	cat logs/bot_info.log
+sh: term
+term:
+	$(compose) exec bot sh
 
-sel: show_error_logs
-show_error_logs:
-	cat logs/bot_error.log
+sl: show_logs
+show_logs:
+	cat logs/bot.log
 
 sdl: show_docker_logs
 show_docker_logs:
@@ -88,3 +93,23 @@ show_docker_logs:
 style:
 	black src
 	isort src
+
+gc: generate_configs
+generate_configs:
+	cp configs/db.env.example configs/db.env
+	cp configs/pgadmin.env.example configs/pgadmin.env
+	cp configs/bot.env.example configs/bot.env
+
+gs: generate_secrets
+generate_secrets:
+	@echo "pgadmin password:" $(shell python -c "import os; print(os.urandom(32).hex())")
+	@echo "postgres password:" $(shell python -c "import os; print(os.urandom(32).hex())")
+
+migrate:
+	$(compose) exec bot alembic upgrade head
+
+makemigrations:
+	$(compose) exec bot alembic revision --autogenerate -m "$(title)"
+
+add_voices_in_db:
+	$(compose) exec bot python scripts/add_voices_in_db.py

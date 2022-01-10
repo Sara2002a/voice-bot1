@@ -34,3 +34,6 @@ def configure_logger():
     )
     # show project settings before launch
     logger.info("Project settings:\n{}".format(settings.json(indent=4)))
+
+
+__all__ = ("root_dir", "settings", "configure_logger")

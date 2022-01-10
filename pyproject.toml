@@ -15,6 +15,8 @@ line-length = 99
 [tool.poetry.dependencies]
 python = "^3.9"
 loguru = "^0.5.3"
+alembic = "^1.7.5"
+SQLAlchemy = "^1.4.29"
 python-telegram-bot = "^13.7"
 pydantic = {version = "^1.8.2", extras = ["dotenv"]}
 

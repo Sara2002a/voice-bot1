@@ -1,6 +1,6 @@
 # Voice Bot
 
-### Зависимости:
+### Dependencies:
 
 * Python 3.9
 * Poetry

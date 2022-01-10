@@ -1,34 +1,26 @@
 from pathlib import Path
 
-from loguru import logger
-from pydantic import BaseSettings, Field, validator
-
-root_dir = Path(__file__).resolve().parent.parent
-# if bot in docker change root dir path
-root_dir = root_dir.parent if "src" in str(Path(__file__).resolve()) else root_dir
+from pydantic import BaseSettings, Field, PostgresDsn, validator
 
 
 class BaseConfig(BaseSettings):
-    mode: str = Field(default="prod")
+    mode: str = Field(default="production")
     telegram_token: str
     telegram_base_url: str = Field(default="")
+    db_url: PostgresDsn
+    voice_chat: str
 
     @validator("mode")
-    def name_must_contain_space(cls, value):
-        if value not in ["prod", "dev", "local"]:
-            raise ValueError("mode must be prod, dev or local.")
+    def mode_validator(cls, value):
+        if value not in ["production", "development"]:
+            raise ValueError("mode must be production or development")
         return value
-
-    class Config:
-        env_file = root_dir.joinpath(".env")
-        env_file_encoding = "utf-8"
 
 
 base_conf = BaseConfig()
+root_dir = Path(__file__).resolve().parent.parent
 
-if base_conf.mode == "local":
-    from settings.local import settings
-elif base_conf.mode == "dev":
+if base_conf.mode == "dev":
     from settings.development import settings
 else:
     from settings.production import settings

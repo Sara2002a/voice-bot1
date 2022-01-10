@@ -8,9 +8,12 @@ __pycache__/
 **.idea**
 
 # files
-.env
+*.env
 *.log*
+assets/*
 
 # folders
 data
-media
+
+# exclusions
+!assets/.gitkeep

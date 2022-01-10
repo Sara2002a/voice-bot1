@@ -1,0 +1,52 @@
+version: "3.9"
+
+networks:
+  bot-db:
+    name: bot-db
+    driver: bridge
+  pgadmin-db:
+    name: pgadmin-db
+    driver: bridge
+
+services:
+  db:
+    image: postgres:14
+    container_name: voice-bot-db
+    restart: always
+    env_file:
+      - ../configs/db.env
+    networks:
+      - bot-db
+      - pgadmin-db
+    volumes:
+      - ../data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: voice-bot-pgadmin
+    restart: always
+    env_file:
+      - ../configs/pgadmin.env
+    networks:
+      - pgadmin-db
+    depends_on:
+      - db
+    ports:
+      - 81:80
+
+  bot:
+    image: voice-bot
+    container_name: voice-bot
+    build:
+      context: ..
+      dockerfile: dockerfiles/bot.dockerfile
+    restart: unless-stopped
+    env_file: ../configs/bot.env
+    tty: true
+    networks:
+      - bot-db
+    volumes:
+      - ../logs:/bot/logs
+      - ../assets:/bot/assets
+      - ../src/migrations:/bot/migrations
+    command: python run.py
