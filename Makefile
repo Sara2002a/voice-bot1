@@ -1,5 +1,13 @@
+-include configs/bot.env
+export mode
+
 compose_file := dockerfiles/docker-compose.yml
+dev_compose_file := dockerfiles/docker-compose.dev.yml
 compose := docker-compose -f $(compose_file)
+
+ifeq ($(mode), development)
+	compose := $(compose) -f $(dev_compose_file)
+endif
 
 h: help
 help:

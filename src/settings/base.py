@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pydantic import BaseSettings, Field, PostgresDsn, validator
 
+development_mode, production_mode = "development", "production"
+
 
 class BaseConfig(BaseSettings):
     mode: str = Field(default="production")
@@ -12,7 +14,7 @@ class BaseConfig(BaseSettings):
 
     @validator("mode")
     def mode_validator(cls, value):
-        if value not in ["production", "development"]:
+        if value not in (development_mode, production_mode):
             raise ValueError("mode must be production or development")
         return value
 
@@ -20,7 +22,7 @@ class BaseConfig(BaseSettings):
 base_conf = BaseConfig()
 root_dir = Path(__file__).resolve().parent.parent
 
-if base_conf.mode == "dev":
+if base_conf.mode == development_mode:
     from settings.development import settings
 else:
     from settings.production import settings

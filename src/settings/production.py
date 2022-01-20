@@ -2,7 +2,8 @@ from settings.base import BaseConfig
 
 
 class Config(BaseConfig):
-    pass
+    debug: bool
 
 
-settings = Config()
+settings = Config(debug=False)
+__all__ = ["settings"]

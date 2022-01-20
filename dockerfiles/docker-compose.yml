@@ -40,6 +40,7 @@ services:
     build:
       context: ..
       dockerfile: dockerfiles/bot.dockerfile
+      target: production
     restart: unless-stopped
     env_file: ../configs/bot.env
     tty: true
@@ -48,5 +49,4 @@ services:
     volumes:
       - ../logs:/bot/logs
       - ../assets:/bot/assets
-      - ../src/migrations:/bot/migrations
     command: python run.py
