@@ -1,4 +1,3 @@
-from loguru import logger
 from sqlalchemy import create_engine
 from telegram import InlineQueryResultAudio, Update
 from telegram.ext import CallbackContext

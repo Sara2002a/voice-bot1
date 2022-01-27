@@ -96,7 +96,7 @@ show_logs:
 
 sdl: show_docker_logs
 show_docker_logs:
-	$(compose) logs -f
+	$(compose) logs -f $(service)
 
 style:
 	black src
@@ -118,6 +118,10 @@ migrate:
 
 makemigrations:
 	$(compose) exec bot alembic revision --autogenerate -m "$(title)"
+
+ssm: show_sql_migrations
+show_sql_migrations:
+	$(compose) exec bot alembic upgrade head --sql
 
 add_voices_in_db:
 	$(compose) exec bot python scripts/add_voices_in_db.py

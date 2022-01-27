@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from sqlalchemy import create_engine
 from pydantic import BaseSettings, Field, PostgresDsn, validator
 
 development_mode, production_mode = "development", "production"
@@ -28,3 +29,5 @@ else:
     from settings.production import settings
 
 del base_conf
+
+database = create_engine(settings.db_url)
