@@ -1,5 +1,5 @@
 from loguru import logger
-from telegram import error as e
+from telegram.error import Unauthorized
 
 
 def check_user(f):
@@ -16,7 +16,7 @@ def check_user(f):
             else:
                 f(*args)
 
-        except (e.BadRequest, e.Unauthorized) as err:
+        except Unauthorized as err:
             logger.error("Error: {}\nUser: {}".format(err, args[0].effective_user.id))
 
     return wrapper

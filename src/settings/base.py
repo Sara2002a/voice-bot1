@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from sqlalchemy import create_engine
 from pydantic import BaseSettings, Field, PostgresDsn, validator
+from sqlalchemy import create_engine
 
 development_mode, production_mode = "development", "production"
 

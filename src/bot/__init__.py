@@ -1,6 +1,6 @@
 from telegram.ext import CallbackQueryHandler, CommandHandler, InlineQueryHandler, Updater
 
-from bot.callbacks.games import show_games
+from bot.callbacks.voices import show_voices
 from bot.commands.start import start
 from bot.inlines.search import search
 from settings import settings
@@ -11,7 +11,8 @@ else:
     app = Updater(token=settings.telegram_token)
 
 # callbacks
-app.dispatcher.add_handler(CallbackQueryHandler(show_games, pattern="show_games", run_async=True))
+app.dispatcher.add_handler(CallbackQueryHandler(start, pattern="show_menu", run_async=True))
+app.dispatcher.add_handler(CallbackQueryHandler(show_voices, pattern="", run_async=True))
 
 # commands
 app.dispatcher.add_handler(CommandHandler("start", start, run_async=True))

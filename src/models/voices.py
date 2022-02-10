@@ -19,6 +19,8 @@ voice_model = Table(
     Column("link", VARCHAR(length=2000), nullable=False, unique=True, comment="Link"),
     Column("telegram_file_id", VARCHAR(length=1000), nullable=False, unique=True, comment="Telegram File ID"),
     Column("category_uuid", UUID, ForeignKey("public.categories.uuid", onupdate="CASCADE"), nullable=False, comment="Category UUID"),
+    Column("subcategory_uuid", UUID, ForeignKey("public.subcategories.uuid", onupdate="CASCADE"), nullable=False, comment="Subcategory UUID"),
+    Column("emotion_uuid", UUID, ForeignKey("public.emotions.uuid", onupdate="CASCADE"), nullable=False, comment="Emotion UUID"),
     UniqueConstraint("title", "performer", name="voice_constraint"),
     schema="public",
     comment="Voices"

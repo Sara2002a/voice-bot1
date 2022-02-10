@@ -2,7 +2,7 @@ import logging
 
 from loguru import logger
 
-from settings.base import development_mode, production_mode, root_dir, settings
+from settings.base import database, development_mode, production_mode, root_dir, settings
 
 
 def configure_logger():
@@ -36,4 +36,11 @@ def configure_logger():
     logger.info("Project settings:\n{}".format(settings.json(indent=4)))
 
 
-__all__ = ["development_mode", "production_mode", "root_dir", "settings", "configure_logger"]
+__all__ = [
+    "database",
+    "development_mode",
+    "production_mode",
+    "root_dir",
+    "settings",
+    "configure_logger",
+]

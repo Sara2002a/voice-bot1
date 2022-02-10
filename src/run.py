@@ -2,7 +2,7 @@ from loguru import logger
 from telegram.error import InvalidToken, NetworkError, Unauthorized
 
 from bot import app
-from settings import configure_logger, settings, development_mode, production_mode
+from settings import configure_logger, development_mode, production_mode, settings
 
 
 def run():
