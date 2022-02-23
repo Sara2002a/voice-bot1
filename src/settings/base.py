@@ -9,7 +9,7 @@ development_mode, production_mode = "development", "production"
 class BaseConfig(BaseSettings):
     mode: str = Field(default="production")
     telegram_token: str
-    telegram_base_url: str = Field(default="")
+    telegram_base_url: str | None
     db_url: PostgresDsn
     voice_chat: str
 

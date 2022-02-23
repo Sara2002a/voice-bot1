@@ -1,4 +1,3 @@
-from asyncio.log import logger
 import math
 
 from sqlalchemy import func, select

@@ -9,7 +9,17 @@ def run():
     configure_logger()
     try:
         logger.info("Run bot...")
-        app.start_polling()
+        if settings.host:
+            app.start_webhook(
+                listen="0.0.0.0",
+                port=80,
+                url_path=settings.telegram_token,
+                webhook_url=f"{settings.host}/{settings.telegram_token}",
+                cert="cert.pem",
+            )
+        else:
+            app.start_polling()
+
         app.idle()
     except (InvalidToken, Unauthorized) as err:
         logger.error("Invalid telegram token.")
