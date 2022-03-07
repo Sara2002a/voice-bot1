@@ -1,11 +1,12 @@
-from asyncio.log import logger
-from operator import or_
+from urllib.parse import quote
+
+from sqlalchemy import or_
 from telegram import InlineQueryResultAudio, Update, constants
 from telegram.ext import CallbackContext
-from sqlalchemy import or_
+
 from bot.utils import check_user
-from models import voice_model, voices
-from settings import database
+from models import voice_model
+from settings import database, settings
 
 
 @check_user
@@ -28,12 +29,12 @@ def search(update: Update, context: CallbackContext) -> None:
     update.inline_query.answer(
         [
             InlineQueryResultAudio(
-                id=row["uuid"],
-                title=row["title"],
-                audio_url=row["link"],
-                performer=row["performer"],
+                id=voice["uuid"],
+                title=voice["title"],
+                audio_url=f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                performer=voice["performer"],
             )
-            for row in database.execute(voices)
+            for voice in database.execute(voices)
         ],
         timeout=10,
         next_offset=offset + 1,

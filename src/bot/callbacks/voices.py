@@ -1,5 +1,5 @@
-from asyncio.log import logger
 import math
+from urllib.parse import quote
 
 from sqlalchemy import func, select
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -8,7 +8,7 @@ from telegram.ext import CallbackContext
 
 from bot.utils import check_user, ct, mt
 from models import available_categories, category_model, subcategory_model, voice_model
-from settings import database
+from settings import database, settings
 
 MAX_PAGES, MAX_VOICES = 5, 5
 
@@ -65,7 +65,7 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
 
     voices_query = (
         voice_model.select()
-        .with_only_columns(voice_model.c.telegram_file_id)
+        .with_only_columns(voice_model.c.path)
         .where(category_model.c.slug == category)
         .where(subcategory_model.c.slug == subcategory)
         .limit(MAX_VOICES)
@@ -120,10 +120,13 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
         for index, voice in enumerate(voices, start=1):
             if index == voices.rowcount:
                 res = update.callback_query.message.reply_voice(
-                    voice["telegram_file_id"], reply_markup=reply_markup
+                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                    reply_markup=reply_markup,
                 )
             else:
-                res = update.callback_query.message.reply_voice(voice["telegram_file_id"])
+                res = update.callback_query.message.reply_voice(
+                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                )
 
             voices_message_id.append(res.message_id)
         context.user_data["voices_message_id"] = voices_message_id

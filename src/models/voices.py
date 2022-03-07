@@ -16,8 +16,7 @@ voice_model = Table(
     # https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
     Column("title", VARCHAR(length=255), nullable=False, comment="Title"),
     Column("performer", VARCHAR(length=255), nullable=False, comment="Performer"),
-    Column("link", VARCHAR(length=2000), nullable=False, unique=True, comment="Link"),
-    Column("telegram_file_id", VARCHAR(length=1000), nullable=False, unique=True, comment="Telegram File ID"),
+    Column("path", VARCHAR(length=2000), nullable=False, unique=True, comment="Path"),
     Column("category_uuid", UUID, ForeignKey("public.categories.uuid", onupdate="CASCADE"), nullable=False, comment="Category UUID"),
     Column("subcategory_uuid", UUID, ForeignKey("public.subcategories.uuid", onupdate="CASCADE"), nullable=False, comment="Subcategory UUID"),
     Column("emotion_uuid", UUID, ForeignKey("public.emotions.uuid", onupdate="CASCADE"), nullable=False, comment="Emotion UUID"),

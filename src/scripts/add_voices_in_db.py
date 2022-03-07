@@ -1,13 +1,9 @@
 import re
 from pathlib import Path
-from time import sleep
 
 from loguru import logger
 from sqlalchemy import Table, create_engine
 from sqlalchemy.exc import IntegrityError
-from telegram import Message
-from telegram.error import RetryAfter
-from telegram.ext import ExtBot
 
 from models import category_model, emotion_model, subcategory_model, voice_model
 from settings import settings
@@ -15,8 +11,6 @@ from settings import settings
 assets_dir = Path("/bot/assets")
 
 database = create_engine(settings.db_url)
-
-bot = ExtBot(token=settings.telegram_token)
 
 
 def category_is_valid(file_name: str) -> bool:
@@ -80,13 +74,12 @@ def create_emotion(title: str):
     return _create_resource(title=title, slug=emotions.get(title), model=emotion_model)
 
 
-def add_voice(voice_title: Path, tg_info: Message, category, subcategory, emotion):
+def add_voice(voice_title: Path, path, category, subcategory, emotion):
     database.execute(
         voice_model.insert().values(
             title=voice_title.name.split("-")[1].replace(".opus", ""),
             performer=voice_title.name.split("-")[0],
-            link=tg_info.link,
-            telegram_file_id=tg_info.voice.file_id,
+            path=path,
             category_uuid=category[0],
             emotion_uuid=emotion[0],
             subcategory_uuid=subcategory[0],
@@ -126,20 +119,9 @@ def parse_voices_dir(category: Path) -> None:
                     continue
 
                 try:
-                    tg_info = bot.send_voice(
-                        chat_id=settings.voice_chat, voice=open(emotion / voice, "rb")
-                    )
-                except RetryAfter as err:
-                    logger.error(f"Sleep {err.retry_after + 1.0}")
-                    sleep(err.retry_after + 1.0)
-                    tg_info = bot.send_voice(
-                        chat_id=settings.voice_chat, voice=open(emotion / voice, "rb")
-                    )
-
-                try:
                     add_voice(
                         voice_title=voice,
-                        tg_info=tg_info,
+                        path=f"{category.name}/{subcategory.name}/{emotion.name}/{voice.name}",
                         category=category_resource,
                         subcategory=subcategory_resource,
                         emotion=emotion_resource,

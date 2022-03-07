@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseSettings, Field, PostgresDsn, validator
+from pydantic import BaseSettings, Field, HttpUrl, PostgresDsn, validator
 from sqlalchemy import create_engine
 
 development_mode, production_mode = "development", "production"
@@ -11,12 +11,12 @@ class BaseConfig(BaseSettings):
     telegram_token: str
     telegram_base_url: str = Field(default="")
     db_url: PostgresDsn
-    voice_chat: str
+    voice_url: HttpUrl
 
     @validator("mode")
     def mode_validator(cls, value):
         if value not in (development_mode, production_mode):
-            raise ValueError("mode must be production or development")
+            raise ValueError("Variable mode must be production or development.")
         return value
 
 
