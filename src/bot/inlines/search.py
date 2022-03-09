@@ -5,7 +5,7 @@ from telegram import InlineQueryResultAudio, Update, constants
 from telegram.ext import CallbackContext
 
 from bot.utils import check_user
-from models import voice_model
+from models import user_model, user_voice_model, voice_model
 from settings import database, settings
 
 
@@ -16,13 +16,15 @@ def search(update: Update, context: CallbackContext) -> None:
         voice_model.select()
         .limit(constants.MAX_INLINE_QUERY_RESULTS)
         .offset(offset * constants.MAX_INLINE_QUERY_RESULTS)
+        .order_by(user_voice_model.c.created_at)
+        .join(user_voice_model, voice_model.c.uuid == user_voice_model.c.voice_uuid, isouter=True)
     )
 
     if text_search := update.inline_query.query:
         voices = voices.where(
             or_(
-                voice_model.c.title.like(f"%{text_search}%"),
-                voice_model.c.performer.like(f"%{text_search}%"),
+                voice_model.c.title.ilike(f"%{text_search}%"),
+                voice_model.c.performer.ilike(f"%{text_search}%"),
             )
         )
 

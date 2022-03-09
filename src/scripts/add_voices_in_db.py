@@ -77,8 +77,8 @@ def create_emotion(title: str):
 def add_voice(voice_title: Path, path, category, subcategory, emotion):
     database.execute(
         voice_model.insert().values(
-            title=voice_title.name.split("-")[1].replace(".opus", ""),
-            performer=voice_title.name.split("-")[0],
+            title=voice_title.name.split("-", maxsplit=1)[1].replace(".opus", ""),
+            performer=voice_title.name.split("-", maxsplit=1)[0],
             path=path,
             category_uuid=category[0],
             emotion_uuid=emotion[0],
@@ -112,7 +112,8 @@ def parse_voices_dir(category: Path) -> None:
                         voice_model.select()
                         .with_only_columns(voice_model.c.uuid)
                         .where(
-                            voice_model.c.title == voice.name.split("-")[1].replace(".opus", "")
+                            voice_model.c.title
+                            == voice.name.split("-", maxsplit=1)[1].replace(".opus", "")
                         )
                     ).first()
                 ):

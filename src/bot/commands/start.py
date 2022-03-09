@@ -1,14 +1,20 @@
+from sqlalchemy.exc import IntegrityError
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
 from bot.utils import check_user, mt
-from models import category_model
+from models import category_model, user_model
 from settings import database
 
 
 @check_user
 def start(update: Update, context: CallbackContext) -> None:
+    try:
+        database.execute(user_model.insert().values(telegram_id=update.effective_user.id))
+    except IntegrityError:
+        pass
+
     reply_markup = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton(row["title"], callback_data=row["slug"].value)]

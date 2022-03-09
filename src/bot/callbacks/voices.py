@@ -1,13 +1,20 @@
 import math
 from urllib.parse import quote
 
-from sqlalchemy import func, select
+from sqlalchemy import bindparam, func, insert, select
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
 from bot.utils import check_user, ct, mt
-from models import available_categories, category_model, subcategory_model, voice_model
+from models import (
+    available_categories,
+    category_model,
+    subcategory_model,
+    user_model,
+    user_voice_model,
+    voice_model
+)
 from settings import database, settings
 
 MAX_PAGES, MAX_VOICES = 5, 5
@@ -20,10 +27,13 @@ def show_voices(update: Update, context: CallbackContext) -> None:
     if callback_data.endswith("*"):
         return
 
-    if callback_data in [e.value for e in available_categories]:
+    if callback_data in [c.value for c in available_categories]:
         _show_categories(update=update, context=context, data=callback_data)
         return
 
+    if callback_data.startswith("s_"):
+        _save_voice(update=update, context=context, data=callback_data)
+        return
     _show_voices(update=update, context=context, data=callback_data)
 
 
@@ -44,10 +54,25 @@ def _show_categories(update: Update, context: CallbackContext, data: str) -> Non
     ]
     keyboard.append([InlineKeyboardButton(ct.back, callback_data="show_menu")])
 
-    update.callback_query.message.edit_text(
-        mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
+    for voices_message_id in context.user_data.get("voices_message_id", []):
+        try:
+            context.bot.delete_message(
+                chat_id=update.effective_chat.id, message_id=voices_message_id
+            )
+        except BadRequest:
+            pass
+
+    if update.callback_query.message.text:
+        update.callback_query.message.edit_text(
+            mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+    else:
+        update.callback_query.message.reply_text(
+            mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+    context.user_data["voices_message_id"] = []
 
 
 def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
@@ -65,7 +90,7 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
 
     voices_query = (
         voice_model.select()
-        .with_only_columns(voice_model.c.path)
+        .with_only_columns(voice_model.c.uuid, voice_model.c.path)
         .where(category_model.c.slug == category)
         .where(subcategory_model.c.slug == subcategory)
         .limit(MAX_VOICES)
@@ -74,6 +99,74 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
         .join(subcategory_model, voice_model.c.subcategory_uuid == subcategory_model.c.uuid)
     )
 
+    pages_buttons = _get_pages_buttons(
+        current_page=current_page,
+        count_voices=count_voices,
+        category=category,
+        subcategory=subcategory,
+    )
+
+    if voices := database.execute(voices_query):
+        if not context.user_data.get("voices_message_id"):
+            update.callback_query.message.delete()
+
+        for voices_message_id in context.user_data.get("voices_message_id", []):
+            try:
+                res = context.bot.delete_message(
+                    chat_id=update.effective_chat.id, message_id=voices_message_id
+                )
+            except BadRequest:
+                pass
+
+        voices_message_id, save_voices_buttons = [], []
+        for index, voice in enumerate(voices, start=1):
+            save_voices_buttons.append(
+                InlineKeyboardButton(f"{index}💾", callback_data=f"s_{voice['uuid']}")
+            )
+            if index == voices.rowcount:
+                reply_markup = InlineKeyboardMarkup(
+                    [
+                        pages_buttons,
+                        save_voices_buttons,
+                        [
+                            InlineKeyboardButton(ct.menu, callback_data="show_menu"),
+                            InlineKeyboardButton(ct.back, callback_data=category),
+                        ],
+                    ]
+                )
+                res = update.callback_query.message.reply_voice(
+                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                    reply_markup=reply_markup,
+                )
+            else:
+                res = update.callback_query.message.reply_voice(
+                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                )
+
+            voices_message_id.append(res.message_id)
+
+        context.user_data["voices_message_id"] = voices_message_id
+
+
+def _save_voice(update: Update, context: CallbackContext, data: str) -> None:
+    user_telegram_id, voice_uuid = update.effective_user.id, data.replace("s_", "")
+
+    user_uuid_subq = (
+        select(user_model.c.uuid)
+        .where(user_model.c.telegram_id == bindparam("user_telegram_id"))
+        .scalar_subquery()
+    )
+    database.execute(
+        insert(user_voice_model).values(user_uuid=user_uuid_subq),
+        [
+            {"user_telegram_id": user_telegram_id, "voice_uuid": voice_uuid},
+        ],
+    )
+
+
+def _get_pages_buttons(
+    current_page: int, count_voices: int, category: str, subcategory: str
+) -> list[InlineKeyboardButton]:
     real_count_pages, pages_buttons = math.ceil(count_voices / MAX_VOICES), []
     start_page, end_page = _get_pages_info(
         current_page=current_page, real_count_pages=real_count_pages
@@ -98,38 +191,7 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
             InlineKeyboardButton(">", callback_data=f"{category}_{subcategory}_{current_page + 1}")
         )
 
-    if voices := database.execute(voices_query):
-        reply_markup = InlineKeyboardMarkup(
-            [
-                pages_buttons,
-                [
-                    InlineKeyboardButton(ct.menu, callback_data="show_menu"),
-                ],
-            ]
-        )
-        update.callback_query.message.delete()
-        for voices_message_id in context.user_data.get("voices_message_id", []):
-            try:
-                res = context.bot.delete_message(
-                    chat_id=update.effective_chat.id, message_id=voices_message_id
-                )
-            except BadRequest:
-                pass
-
-        voices_message_id = []
-        for index, voice in enumerate(voices, start=1):
-            if index == voices.rowcount:
-                res = update.callback_query.message.reply_voice(
-                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
-                    reply_markup=reply_markup,
-                )
-            else:
-                res = update.callback_query.message.reply_voice(
-                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
-                )
-
-            voices_message_id.append(res.message_id)
-        context.user_data["voices_message_id"] = voices_message_id
+    return pages_buttons
 
 
 def _get_pages_info(current_page: int, real_count_pages: int) -> tuple:
