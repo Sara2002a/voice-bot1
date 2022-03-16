@@ -2,6 +2,7 @@ import math
 from urllib.parse import quote
 
 from sqlalchemy import bindparam, func, insert, select
+from sqlalchemy.exc import IntegrityError
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
@@ -121,7 +122,7 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
         voices_message_id, save_voices_buttons = [], []
         for index, voice in enumerate(voices, start=1):
             save_voices_buttons.append(
-                InlineKeyboardButton(f"{index}💾", callback_data=f"s_{voice['uuid']}")
+                InlineKeyboardButton("💾", callback_data=f"s_{voice['uuid']}")
             )
             if index == voices.rowcount:
                 reply_markup = InlineKeyboardMarkup(
@@ -151,17 +152,28 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
 def _save_voice(update: Update, context: CallbackContext, data: str) -> None:
     user_telegram_id, voice_uuid = update.effective_user.id, data.replace("s_", "")
 
+    voice_query = (
+        voice_model.select()
+        .where(voice_model.c.uuid == voice_uuid)
+        .with_only_columns(voice_model.c.performer, voice_model.c.title)
+    )
     user_uuid_subq = (
         select(user_model.c.uuid)
         .where(user_model.c.telegram_id == bindparam("user_telegram_id"))
         .scalar_subquery()
     )
-    database.execute(
-        insert(user_voice_model).values(user_uuid=user_uuid_subq),
-        [
-            {"user_telegram_id": user_telegram_id, "voice_uuid": voice_uuid},
-        ],
-    )
+
+    voice = "-".join(database.execute(voice_query).fetchone())
+    try:
+        database.execute(
+            insert(user_voice_model).values(user_uuid=user_uuid_subq),
+            [
+                {"user_telegram_id": user_telegram_id, "voice_uuid": voice_uuid},
+            ],
+        )
+        update.callback_query.message.reply_text(mt.voice_saved.format(voice))
+    except IntegrityError:
+        update.callback_query.message.reply_text(mt.voice_already_saved.format(voice))
 
 
 def _get_pages_buttons(

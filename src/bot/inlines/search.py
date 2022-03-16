@@ -38,6 +38,7 @@ def search(update: Update, context: CallbackContext) -> None:
             )
             for voice in database.execute(voices)
         ],
+        is_personal=True,
         timeout=10,
         next_offset=offset + 1,
     )
