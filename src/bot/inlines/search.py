@@ -5,7 +5,7 @@ from telegram import InlineQueryResultAudio, Update, constants
 from telegram.ext import CallbackContext
 
 from bot.utils import check_user
-from models import user_model, user_voice_model, voice_model
+from models import user_voice_model, voice_model
 from settings import database, settings
 
 
@@ -38,6 +38,7 @@ def search(update: Update, context: CallbackContext) -> None:
             )
             for voice in database.execute(voices)
         ],
+        cache_time=100,
         is_personal=True,
         timeout=10,
         next_offset=offset + 1,

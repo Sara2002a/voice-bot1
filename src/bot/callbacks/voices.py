@@ -4,10 +4,9 @@ from urllib.parse import quote
 from sqlalchemy import bindparam, func, insert, select
 from sqlalchemy.exc import IntegrityError
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from bot.utils import check_user, ct, mt
+from bot.utils import check_user, ct, delete_previous_messages, mt
 from models import (
     available_categories,
     category_model,
@@ -35,9 +34,11 @@ def show_voices(update: Update, context: CallbackContext) -> None:
     if callback_data.startswith("s_"):
         _save_voice(update=update, context=context, data=callback_data)
         return
+
     _show_voices(update=update, context=context, data=callback_data)
 
 
+@delete_previous_messages
 def _show_categories(update: Update, context: CallbackContext, data: str) -> None:
     subcategories = (
         voice_model.select()
@@ -55,27 +56,20 @@ def _show_categories(update: Update, context: CallbackContext, data: str) -> Non
     ]
     keyboard.append([InlineKeyboardButton(ct.back, callback_data="show_menu")])
 
-    for voices_message_id in context.user_data.get("voices_message_id", []):
-        try:
-            context.bot.delete_message(
-                chat_id=update.effective_chat.id, message_id=voices_message_id
-            )
-        except BadRequest:
-            pass
-
     if update.callback_query.message.text:
-        update.callback_query.message.edit_text(
+        res = update.callback_query.message.edit_text(
             mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
     else:
-        update.callback_query.message.reply_text(
+        res = update.callback_query.message.reply_text(
             mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-    context.user_data["voices_message_id"] = []
+    context.user_data["voices_message_id"] = [res.message_id]
 
 
+@delete_previous_messages
 def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
     category, subcategory, page = data.split("_")
     current_page = int(page)
@@ -108,17 +102,6 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
     )
 
     if voices := database.execute(voices_query):
-        if not context.user_data.get("voices_message_id"):
-            update.callback_query.message.delete()
-
-        for voices_message_id in context.user_data.get("voices_message_id", []):
-            try:
-                res = context.bot.delete_message(
-                    chat_id=update.effective_chat.id, message_id=voices_message_id
-                )
-            except BadRequest:
-                pass
-
         voices_message_id, save_voices_buttons = [], []
         for index, voice in enumerate(voices, start=1):
             save_voices_buttons.append(
