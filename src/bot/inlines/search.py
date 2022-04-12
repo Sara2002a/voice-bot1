@@ -1,11 +1,11 @@
 from urllib.parse import quote
 
-from sqlalchemy import or_
+from sqlalchemy import bindparam, or_, select
 from telegram import InlineQueryResultAudio, Update, constants
 from telegram.ext import CallbackContext
 
 from bot.utils import check_user
-from models import user_voice_model, voice_model
+from models import user_model, user_voice_model, voice_model
 from settings import database, settings
 
 
@@ -14,19 +14,30 @@ def search(update: Update, context: CallbackContext) -> None:
     offset = 0 if not update.inline_query.offset else int(update.inline_query.offset)
     voices = (
         voice_model.select()
+        .with_only_columns(
+            voice_model.c.uuid, voice_model.c.title, voice_model.c.path, voice_model.c.performer
+        )
         .limit(constants.MAX_INLINE_QUERY_RESULTS)
         .offset(offset * constants.MAX_INLINE_QUERY_RESULTS)
-        .order_by(user_voice_model.c.created_at)
+        .order_by(voice_model.c.created_at)
         .join(user_voice_model, voice_model.c.uuid == user_voice_model.c.voice_uuid, isouter=True)
     )
 
     if text_search := update.inline_query.query:
-        voices = voices.where(
-            or_(
-                voice_model.c.title.ilike(f"%{text_search}%"),
-                voice_model.c.performer.ilike(f"%{text_search}%"),
+        if text_search == "my":
+            user_uuid_subq = (
+                select(user_model.c.uuid)
+                .where(user_model.c.telegram_id == bindparam("user_telegram_id"))
+                .scalar_subquery()
             )
-        )
+            voices = voices.where(user_voice_model.c.user_uuid == user_uuid_subq)
+        else:
+            voices = voices.where(
+                or_(
+                    voice_model.c.title.ilike(f"%{text_search}%"),
+                    voice_model.c.performer.ilike(f"%{text_search}%"),
+                )
+            )
 
     update.inline_query.answer(
         [
@@ -36,9 +47,14 @@ def search(update: Update, context: CallbackContext) -> None:
                 audio_url=f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
                 performer=voice["performer"],
             )
-            for voice in database.execute(voices)
+            for voice in database.execute(
+                voices,
+                [
+                    {"user_telegram_id": update.effective_user.id},
+                ],
+            )
         ],
-        cache_time=100,
+        cache_time=10,
         is_personal=True,
         timeout=10,
         next_offset=offset + 1,

@@ -77,21 +77,20 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
     count_voices = database.execute(
         select(func.count("*"))
         .select_from(voice_model)
-        .where(category_model.c.slug == category)
-        .where(subcategory_model.c.slug == subcategory)
         .join(category_model, voice_model.c.category_uuid == category_model.c.uuid)
         .join(subcategory_model, voice_model.c.subcategory_uuid == subcategory_model.c.uuid)
+        .where(category_model.c.slug == category)
+        .where(subcategory_model.c.slug == subcategory)
     ).scalar()
 
     voices_query = (
         voice_model.select()
         .with_only_columns(voice_model.c.uuid, voice_model.c.path)
-        .where(category_model.c.slug == category)
-        .where(subcategory_model.c.slug == subcategory)
-        .limit(MAX_VOICES)
-        .offset((MAX_PAGES * current_page) - MAX_PAGES)
         .join(category_model, voice_model.c.category_uuid == category_model.c.uuid)
         .join(subcategory_model, voice_model.c.subcategory_uuid == subcategory_model.c.uuid)
+        .where(category_model.c.slug == category, subcategory_model.c.slug == subcategory)
+        .offset((MAX_PAGES * current_page) - MAX_PAGES)
+        .limit(MAX_VOICES)
     )
 
     pages_buttons = _get_pages_buttons(
