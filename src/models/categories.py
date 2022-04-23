@@ -10,6 +10,7 @@ from models.utils import initialize_datetime_triggers
 class available_categories(enum.Enum):
     games = "games"
     films = "films"
+    other = "other"
 
 
 category_model = Table(

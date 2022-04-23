@@ -22,7 +22,7 @@ def subcategory_is_valid(file_name: str) -> bool:
 
 
 def voice_is_valid(file_name: str) -> bool:
-    return True if re.match("^.*\S-\S.*.opus$", file_name) else False
+    return True if re.match("^.*\S-\S.*.ogg$", file_name) else False
 
 
 def get_voices_from_dir(voice_dir: Path) -> list:
@@ -77,7 +77,7 @@ def create_emotion(title: str):
 def add_voice(voice_title: Path, path, category, subcategory, emotion):
     database.execute(
         voice_model.insert().values(
-            title=voice_title.name.split("-", maxsplit=1)[1].replace(".opus", ""),
+            title=voice_title.name.split("-", maxsplit=1)[1].replace(".ogg", ""),
             performer=voice_title.name.split("-", maxsplit=1)[0],
             path=path,
             category_uuid=category[0],
@@ -113,7 +113,7 @@ def parse_voices_dir(category: Path) -> None:
                         .with_only_columns(voice_model.c.uuid)
                         .where(
                             voice_model.c.title
-                            == voice.name.split("-", maxsplit=1)[1].replace(".opus", "")
+                            == voice.name.split("-", maxsplit=1)[1].replace(".ogg", "")
                         )
                     ).first()
                 ):

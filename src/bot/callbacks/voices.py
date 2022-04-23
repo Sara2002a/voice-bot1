@@ -66,6 +66,7 @@ def _show_categories(update: Update, context: CallbackContext, data: str) -> Non
             mt.select_category if len(keyboard) > 1 else mt.voices_not_found,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
+
     context.user_data["voices_message_id"] = [res.message_id]
 
 
@@ -106,8 +107,8 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
             save_voices_buttons.append(
                 InlineKeyboardButton("💾", callback_data=f"s_{voice['uuid']}")
             )
-            if index == voices.rowcount:
-                reply_markup = InlineKeyboardMarkup(
+            reply_markup = (
+                InlineKeyboardMarkup(
                     [
                         pages_buttons,
                         save_voices_buttons,
@@ -117,14 +118,14 @@ def _show_voices(update: Update, context: CallbackContext, data: str) -> None:
                         ],
                     ]
                 )
-                res = update.callback_query.message.reply_voice(
-                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
-                    reply_markup=reply_markup,
-                )
-            else:
-                res = update.callback_query.message.reply_voice(
-                    f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
-                )
+                if index == voices.rowcount
+                else None
+            )
+
+            res = update.callback_query.message.reply_voice(
+                f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
+                reply_markup=reply_markup,
+            )
 
             voices_message_id.append(res.message_id)
 
