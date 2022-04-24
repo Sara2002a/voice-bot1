@@ -20,17 +20,18 @@ def search(update: Update, context: CallbackContext) -> None:
         .limit(constants.MAX_INLINE_QUERY_RESULTS)
         .offset(offset * constants.MAX_INLINE_QUERY_RESULTS)
         .order_by(voice_model.c.created_at)
-        .join(user_voice_model, voice_model.c.uuid == user_voice_model.c.voice_uuid, isouter=True)
     )
 
     if text_search := update.inline_query.query:
         if text_search == "my":
             user_uuid_subq = (
                 select(user_model.c.uuid)
-                .where(user_model.c.telegram_id == bindparam("user_telegram_id"))
+                .where(user_model.c.telegram_id == update.effective_user.id)
                 .scalar_subquery()
             )
-            voices = voices.where(user_voice_model.c.user_uuid == user_uuid_subq)
+            voices = voices.join(
+                user_voice_model, voice_model.c.uuid == user_voice_model.c.voice_uuid, isouter=True
+            ).where(user_voice_model.c.user_uuid == user_uuid_subq)
         else:
             voices = voices.where(
                 or_(
@@ -47,12 +48,7 @@ def search(update: Update, context: CallbackContext) -> None:
                 audio_url=f"{settings.voice_url}/{settings.telegram_token}/assets/{quote(voice['path'])}",
                 performer=voice["performer"],
             )
-            for voice in database.execute(
-                voices,
-                [
-                    {"user_telegram_id": update.effective_user.id},
-                ],
-            )
+            for voice in database.execute(voices)
         ],
         cache_time=10,
         is_personal=True,
